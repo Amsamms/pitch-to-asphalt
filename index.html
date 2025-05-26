@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feasibility Study: SDA Pitch Valorization & Storage</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Visualization & Content Choices:
+        - Report Info: Table 2.1 (Asphalt Standards) -> Goal: Inform -> Viz: Interactive HTML Table -> Interaction: Click row for details -> Justification: Digestible presentation of standards -> Library: HTML/JS.
+        - Report Info: Table 3.1 (Pitch vs. Asphalt Properties) -> Goal: Compare -> Viz: Bar Chart (Chart.js) + Text -> Interaction: Hover on bars -> Justification: Clear visual comparison -> Library: Chart.js.
+        - Report Info: Section 3.1 (Pitch Properties) -> Goal: Inform -> Viz: Key Property Cards (HTML/Tailwind) -> Interaction: Static -> Justification: Highlight critical data -> Library: HTML/Tailwind.
+        - Report Info: Table 3.2 (Flux Oils) -> Goal: Inform/Filter -> Viz: Interactive HTML Table -> Interaction: Filter by type/property, click for details -> Justification: Easier navigation of options -> Library: HTML/JS.
+        - Report Info: Table 3.3/Sec 3.4.3 (Compatibility) -> Goal: Explain process -> Viz: HTML/CSS Flowchart + Table -> Interaction: Click flowchart steps -> Justification: Simplify decision process -> Library: HTML/CSS/JS.
+        - Report Info: Section 3.5 (Valorization Strategy) -> Goal: Clarify -> Viz: Decision Card (HTML/Tailwind) -> Interaction: Static -> Justification: Quick, clear answer -> Library: HTML/Tailwind.
+        - Report Info: Section 4.0 Tables (Tank Design Details - 4.1 to 4.7) -> Goal: Inform -> Viz: Interactive HTML Tables -> Interaction: Click rows for context/details -> Justification: Break down technical data -> Library: HTML/JS.
+        - Report Info: Section 4.4 (CUI) -> Goal: Explain -> Viz: HTML/CSS Diagram (Tank Wall Layers) -> Interaction: Hover on layers -> Justification: Visual explanation -> Library: HTML/CSS/Tailwind.
+        - Report Info: Section 5.0 (Recommendations) -> Goal: Actionable advice -> Viz: Accordion/Tabs -> Interaction: Click to expand -> Justification: Organized presentation -> Library: HTML/JS.
+        CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 320px; /* Default height for mobile */
+            max-height: 400px;
+        }
+        @media (min-width: 768px) { /* md breakpoint */
+            .chart-container {
+                height: 384px; /* h-96 for larger screens */
+            }
+        }
+        .table-interactive tbody tr:hover {
+            background-color: #f0f9ff; /* light blue on hover */
+        }
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 100; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 10% auto; /* 10% from the top and centered */
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%; /* Could be more or less, depending on screen size */
+            max-width: 700px;
+            border-radius: 0.5rem;
+        }
+        .close-button {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .close-button:hover,
+        .close-button:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .tab-button.active {
+            background-color: #0d9488; /* teal-600 */
+            color: white;
+        }
+        /* Simple Flowchart/Diagram Styles */
+        .flowchart-step {
+            border: 2px solid #0d9488; /* teal-600 */
+            padding: 0.75rem;
+            margin: 0.5rem;
+            border-radius: 0.375rem;
+            text-align: center;
+            background-color: #f0fdfa; /* teal-50 */
+        }
+        .flowchart-arrow {
+            font-size: 1.5rem;
+            color: #14b8a6; /* teal-500 */
+            margin: 0 0.25rem;
+            display: flex;
+            align-items: center;
+        }
+    </style>
+</head>
+<body class="bg-amber-50 text-neutral-800">
+
+    <nav class="bg-stone-700 text-white p-4 sticky top-0 z-50 shadow-lg">
+        <div class="container mx-auto flex flex-wrap justify-between items-center">
+            <h1 class="text-xl md:text-2xl font-bold text-orange-400">SDA Pitch Valorization & Storage</h1>
+            <button id="mobileMenuButton" class="md:hidden p-2 rounded hover:bg-stone-600">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+                </svg>
+            </button>            <div id="navLinks" class="hidden md:flex md:items-center w-full md:w-auto mt-2 md:mt-0 space-y-2 md:space-y-0 md:space-x-4">
+                <a href="#overview" class="block px-3 py-2 rounded hover:bg-stone-600">Overview</a>
+                <a href="#pitchToAsphalt" class="block px-3 py-2 rounded hover:bg-stone-600">Pitch to Asphalt</a>
+                <a href="#pitchStorage" class="block px-3 py-2 rounded hover:bg-stone-600">Pitch Storage</a>
+                <a href="#recommendations" class="block px-3 py-2 rounded hover:bg-stone-600">Recommendations</a>
+                <a href="Feasibility Study_ Valorization of SDA Pitch as Asphalt and Design of Large-Capacity Heated Storage.pdf" 
+                   download
+                   class="block px-3 py-2 rounded bg-orange-600 hover:bg-orange-700 text-white font-medium transition-colors duration-200"
+                   title="Download Original PDF Report">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 inline mr-1">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                    </svg>
+                    Download PDF
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mx-auto p-4 md:p-6">
+
+        <section id="overview" class="mb-12 pt-16 -mt-16">
+            <h2 class="text-3xl font-bold text-orange-700 mb-6 border-b-2 border-orange-300 pb-2">Project Overview</h2>
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <p class="mb-4 text-lg">This interactive application explores the feasibility of utilizing Solvent Deasphalted (SDA) pitch as a valuable feedstock for asphalt production. The primary goal is to assess how this strategy could increase coker capacity by diverting surplus vacuum residue. This section provides a high-level summary of the key findings related to both the valorization of SDA pitch and the critical engineering considerations for designing and operating large-scale heated storage tanks required for this purpose.</p>
+                <p class="mb-4">The core challenge lies in SDA pitch's inherent properties (hard and brittle), making it unsuitable for direct asphalt use. However, through controlled blending with specific flux oils, it can be transformed into marketable asphalt. This requires meticulous formulation to meet stringent quality standards (ASTM, AASHTO, EN).</p>
+                <p>Storing this pitch at high temperatures (150-200°C) to maintain fluidity presents significant engineering hurdles. The design of large storage tanks (>600 m³) must adhere to codes like API 650 (Appendix M for high temps), involving careful material selection, robust heating and insulation, and comprehensive safety systems.</p>
+                <p class="font-semibold text-stone-700">Explore the sections below to delve into the specifics of asphalt standards, pitch properties, blending techniques, and the detailed engineering aspects of the required storage solutions.</p>
+            </div>
+        </section>
+
+        <section id="pitchToAsphalt" class="mb-12 pt-16 -mt-16">
+            <h2 class="text-3xl font-bold text-orange-700 mb-6 border-b-2 border-orange-300 pb-2">From Pitch to Asphalt: Feasibility & Modification</h2>
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <p class="mb-6 text-lg">This section delves into the transformation of SDA pitch into a marketable asphalt product. It covers the essential international standards that asphalt must meet, the typical properties of SDA pitch compared to paving asphalt, and the crucial blending processes required to modify the pitch. Understanding these aspects is key to determining the viability of selling SDA pitch-derived asphalt.</p>
+
+                <div class="mb-6 border-b border-gray-200">
+                    <nav class="flex space-x-1 sm:space-x-4" aria-label="Tabs">
+                        <button class="tab-button active hs-tab-active:bg-teal-600 hs-tab-active:text-white hs-tab-active:hover:text-white py-2 px-3 sm:px-4 inline-flex items-center gap-2 bg-transparent text-sm font-medium text-center text-gray-500 rounded-t-lg hover:text-teal-600" data-tab="asphaltStandards">Asphalt Standards</button>
+                        <button class="tab-button hs-tab-active:bg-teal-600 hs-tab-active:text-white hs-tab-active:hover:text-white py-2 px-3 sm:px-4 inline-flex items-center gap-2 bg-transparent text-sm font-medium text-center text-gray-500 rounded-t-lg hover:text-teal-600" data-tab="pitchProperties">Pitch Properties</button>
+                        <button class="tab-button hs-tab-active:bg-teal-600 hs-tab-active:text-white hs-tab-active:hover:text-white py-2 px-3 sm:px-4 inline-flex items-center gap-2 bg-transparent text-sm font-medium text-center text-gray-500 rounded-t-lg hover:text-teal-600" data-tab="blendingStrategies">Blending Strategies</button>
+                    </nav>
+                </div>
+
+                <div id="asphaltStandards" class="tab-content active">
+                    <h3 class="text-2xl font-semibold text-stone-700 mb-4">Understanding Asphalt Standards</h3>
+                    <p class="mb-4">Successfully marketing asphalt requires adherence to globally recognized quality standards. These define the physical and performance characteristics for paving and other applications. Key international bodies include ASTM International, AASHTO (USA), and CEN (Europe for EN standards).</p>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200 table-interactive">
+                            <thead class="bg-stone-100">
+                                <tr>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-stone-600 uppercase tracking-wider">Standard</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-stone-600 uppercase tracking-wider">Issuing Body</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-stone-600 uppercase tracking-wider">Asphalt Type</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-stone-600 uppercase tracking-wider">Details</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200" id="asphaltStandardsTableBody">
+                                </tbody>
+                        </table>
+                    </div>
+                    <p class="mt-4 text-sm text-gray-600">Click on a row for more details on key parameters and regions of use.</p>
+                </div>
+
+                <div id="pitchProperties" class="tab-content">
+                    <h3 class="text-2xl font-semibold text-stone-700 mb-4">SDA Pitch Properties vs. Paving Asphalt</h3>
+                    <p class="mb-4">UOP SDA pitch is the heaviest stream from the SDA unit, concentrating asphaltenes, CCR, and metals. Its properties differ significantly from conventional asphalt binders, making it too hard and brittle for direct use in paving.</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div>
+                            <h4 class="text-xl font-semibold text-stone-600 mb-2">Key SDA Pitch Characteristics:</h4>
+                            <ul class="list-disc list-inside space-y-1 text-neutral-700">
+                                <li><strong>Penetration (25°C, dmm):</strong> 6 - 29 (Very Hard)</li>
+                                <li><strong>Softening Point (°C):</strong> 61 - 71 (High)</li>
+                                <li><strong>Ductility (15°C, cm):</strong> 0.2 (Extremely Brittle)</li>
+                                <li><strong>Viscosity (135°C, Pa·s):</strong> 1075 - 2125 (Very High)</li>
+                                <li><strong>Asphaltene Content:</strong> ~20% or higher</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h4 class="text-xl font-semibold text-stone-600 mb-2">Comparison Chart:</h4>
+                            <div class="chart-container">
+                                <canvas id="pitchVsAsphaltChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                     <p class="mb-4">The chart visually compares key properties of typical SDA Pitch against a standard 60/70 penetration grade asphalt. This highlights the significant modifications needed for SDA pitch to meet paving specifications, particularly in terms of softening the pitch and improving its flexibility (ductility).</p>
+                </div>
+
+                <div id="blendingStrategies" class="tab-content">
+                    <h3 class="text-2xl font-semibold text-stone-700 mb-4">Blending Strategies for Asphalt Production</h3>
+                    <p class="mb-4">Since neat SDA pitch is unsuitable, blending with softer bituminous components or flux oils is essential. This section explores the types of flux oils, methods for assessing compatibility, and determining blend ratios.</p>
+
+                    <div class="mb-6">
+                        <h4 class="text-xl font-semibold text-stone-600 mb-2">Valorization: Direct Sale vs. Blending</h4>
+                        <div class="bg-orange-50 p-4 rounded-lg border border-orange-200">
+                            <p class="mb-2"><strong>Direct Sale of Unmodified SDA Pitch?</strong> <span class="font-bold text-red-600">Generally Not Feasible.</span></p>
+                            <p class="text-sm text-neutral-700 mb-3">Why? Unmodified pitch is too hard, brittle, has low ductility, and high viscosity, leading to poor pavement performance and application difficulties.</p>
+                            <p class="mb-2"><strong>Blending SDA Pitch with Other Components?</strong> <span class="font-bold text-green-600">Yes, Feasible & Predominant Strategy.</span></p>
+                            <p class="text-sm text-neutral-700">How? By physically mixing with flux oils (e.g., VGO, LCO, Aromatic Extracts) or softer bitumen grades to adjust properties to meet asphalt specifications. This aligns with producing "specification asphalts" without necessarily involving further chemical processing.</p>
+                        </div>
+                    </div>
+                    
+                    <h4 class="text-xl font-semibold text-stone-600 mb-3">Potential Flux Oils/Cutter Stocks</h4>
+                    <p class="mb-4">Various refinery streams can be used as flux oils. Their effectiveness depends on properties like aromaticity and viscosity. Highly aromatic flux oils are generally preferred for compatibility with asphaltene-rich pitch.</p>
+                    <div class="overflow-x-auto mb-6">
+                         <table class="min-w-full divide-y divide-gray-200 table-interactive">
+                            <thead class="bg-stone-100">
+                                <tr>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-stone-600 uppercase tracking-wider">Flux Oil Type</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-stone-600 uppercase tracking-wider">Source</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-stone-600 uppercase tracking-wider">Details</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200" id="fluxOilsTableBody">
+                                </tbody>
+                        </table>
+                    </div>
+                    <p class="mb-4 text-sm text-gray-600">Click on a row for more details on typical properties and advantages/disadvantages.</p>
+
+                    <h4 class="text-xl font-semibold text-stone-600 mb-3">Assessing Pitch-Flux Compatibility</h4>
+                    <p class="mb-4">Blending incompatible streams can lead to asphaltene precipitation and sludge. Rigorous compatibility testing is crucial. Methods range from simple spot tests to more quantitative analyses like P-value or SBN/IN determination.</p>
+                     <div class="flex flex-col md:flex-row items-center justify-center space-y-2 md:space-y-0 md:space-x-2 mb-4">
+                        <div class="flowchart-step">ASTM D4740 Spot Test (Qualitative Screening)</div>
+                        <div class="flowchart-arrow hidden md:flex">&#10140;</div>
+                        <div class="flowchart-step">P-value / SBN & IN (Quantitative Assessment)</div>
+                        <div class="flowchart-arrow hidden md:flex">&#10140;</div>
+                        <div class="flowchart-step">Hansen Solubility Parameters (Theoretical Prediction)</div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200 table-interactive">
+                            <thead class="bg-stone-100">
+                                <tr>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-stone-600 uppercase tracking-wider">Test Method</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-stone-600 uppercase tracking-wider">Principle</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-stone-600 uppercase tracking-wider">Details</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200" id="compatibilityTestsTableBody">
+                                </tbody>
+                        </table>
+                    </div>
+                     <p class="mt-4 text-sm text-gray-600">Click on a row for key outputs and relevance to SDA pitch blending.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="pitchStorage" class="mb-12 pt-16 -mt-16">
+            <h2 class="text-3xl font-bold text-orange-700 mb-6 border-b-2 border-orange-300 pb-2">Engineering Large-Capacity Pitch Storage</h2>
+             <div class="bg-white p-6 rounded-lg shadow-md">
+                <p class="mb-6 text-lg">Storing large volumes of SDA pitch at elevated temperatures (150-200°C) is a complex engineering challenge. This section outlines the critical design and construction aspects, including applicable codes, material selection for high-temperature and potentially corrosive service, heating and insulation strategies, foundation design considering thermal effects, mixing systems for homogeneity, and essential safety features. Proper engineering is vital for operational reliability and long-term asset integrity.</p>
+
+                <div class="mb-6 border-b border-gray-200">
+                    <nav class="flex flex-wrap space-x-1 sm:space-x-4" aria-label="Tabs">
+                        <button class="tab-button active hs-tab-active:bg-teal-600 hs-tab-active:text-white hs-tab-active:hover:text-white py-2 px-3 sm:px-4 inline-flex items-center gap-2 bg-transparent text-sm font-medium text-center text-gray-500 rounded-t-lg hover:text-teal-600" data-tab="tankDesignCodes">Design Codes</button>
+                        <button class="tab-button hs-tab-active:bg-teal-600 hs-tab-active:text-white hs-tab-active:hover:text-white py-2 px-3 sm:px-4 inline-flex items-center gap-2 bg-transparent text-sm font-medium text-center text-gray-500 rounded-t-lg hover:text-teal-600" data-tab="tankMaterials">Materials</button>
+                        <button class="tab-button hs-tab-active:bg-teal-600 hs-tab-active:text-white hs-tab-active:hover:text-white py-2 px-3 sm:px-4 inline-flex items-center gap-2 bg-transparent text-sm font-medium text-center text-gray-500 rounded-t-lg hover:text-teal-600" data-tab="tankHeatingInsulation">Heating & Insulation</button>
+                        <button class="tab-button hs-tab-active:bg-teal-600 hs-tab-active:text-white hs-tab-active:hover:text-white py-2 px-3 sm:px-4 inline-flex items-center gap-2 bg-transparent text-sm font-medium text-center text-gray-500 rounded-t-lg hover:text-teal-600" data-tab="tankFoundation">Foundation</button>
+                        <button class="tab-button hs-tab-active:bg-teal-600 hs-tab-active:text-white hs-tab-active:hover:text-white py-2 px-3 sm:px-4 inline-flex items-center gap-2 bg-transparent text-sm font-medium text-center text-gray-500 rounded-t-lg hover:text-teal-600" data-tab="tankMixing">Mixing</button>
+                        <button class="tab-button hs-tab-active:bg-teal-600 hs-tab-active:text-white hs-tab-active:hover:text-white py-2 px-3 sm:px-4 inline-flex items-center gap-2 bg-transparent text-sm font-medium text-center text-gray-500 rounded-t-lg hover:text-teal-600" data-tab="tankSafety">Safety Systems</button>
+                    </nav>
+                </div>
+
+                <div id="tankDesignCodes" class="tab-content active">
+                    <h3 class="text-2xl font-semibold text-stone-700 mb-4">Applicable Design Codes & Standards</h3>
+                    <p class="mb-4">A comprehensive suite of industry standards governs the design of large, heated pitch storage tanks. API 650, especially Appendix M for elevated temperatures, is paramount.</p>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200 table-interactive">
+                             <thead class="bg-stone-100">
+                                <tr>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-stone-600 uppercase tracking-wider">Standard</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-stone-600 uppercase tracking-wider">Aspect Covered</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-stone-600 uppercase tracking-wider">Details</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200" id="tankDesignCodesTableBody"></tbody>
+                        </table>
+                    </div>
+                    <p class="mt-4 text-sm text-gray-600">Click on a row for its key relevance to hot pitch storage.</p>
+                </div>
+                <div id="tankMaterials" class="tab-content">
+                    <h3 class="text-2xl font-semibold text-stone-700 mb-4">Material Selection (150-200°C, High-Sulfur)</h3>
+                    <p class="mb-4">Choosing materials involves considering temperature derating (API 650 App. M) and corrosion from high-sulfur pitch. Carbon steels like ASTM A516 Gr. 60/70 are common, with appropriate corrosion allowances.</p>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200 table-interactive">
+                            <thead class="bg-stone-100">
+                                <tr>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-stone-600 uppercase tracking-wider">ASTM Grade</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-stone-600 uppercase tracking-wider">Min. Yield (Ambient)</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-stone-600 uppercase tracking-wider">Min. Tensile (Ambient)</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-stone-600 uppercase tracking-wider">Details</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200" id="tankMaterialsTableBody"></tbody>
+                        </table>
+                    </div>
+                    <p class="mt-4 text-sm text-gray-600">Click on a row for key considerations. Note: Allowable stresses at operating temperature must be per API 650 App. M.</p>
+                </div>
+                <div id="tankHeatingInsulation" class="tab-content">
+                    <h3 class="text-2xl font-semibold text-stone-700 mb-4">Tank Heating & Thermal Insulation</h3>
+                    <p class="mb-4">Maintaining pitch fluidity (150-200°C) requires efficient heating (hot oil systems often preferred) and robust insulation (e.g., mineral wool, calcium silicate) to minimize heat loss and manage CUI (Corrosion Under Insulation).</p>
+                    <h4 class="text-xl font-semibold text-stone-600 mt-6 mb-3">Comparison of Heating Mediums</h4>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200 table-interactive">
+                            <thead class="bg-stone-100">
+                                <tr>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-stone-600 uppercase tracking-wider">Feature</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-stone-600 uppercase tracking-wider">Hot Oil</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-stone-600 uppercase tracking-wider">Steam</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-stone-600 uppercase tracking-wider">Electrical</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-stone-600 uppercase tracking-wider">Details</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200" id="heatingSystemsTableBody"></tbody>
+                        </table>
+                    </div>
+                    <p class="mt-4 text-sm text-gray-600">Click row for more details on suitability for pitch.</p>
+                    <h4 class="text-xl font-semibold text-stone-600 mt-6 mb-3">Common Insulation Materials</h4>
+                     <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200 table-interactive">
+                            <thead class="bg-stone-100">
+                                <tr>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-stone-600 uppercase tracking-wider">Material</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-stone-600 uppercase tracking-wider">Max Service Temp (°C)</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-stone-600 uppercase tracking-wider">k-value @ 175°C mean (W/mK)*</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-stone-600 uppercase tracking-wider">Details</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200" id="insulationMaterialsTableBody"></tbody>
+                        </table>
+                    </div>
+                    <p class="mt-4 text-sm text-gray-600">Click row for pros & cons. *k-values are indicative; consult manufacturer data.</p>
+                    <div class="mt-6 p-4 bg-orange-50 rounded-lg border border-orange-200">
+                        <h5 class="font-semibold text-orange-700 mb-2">Corrosion Under Insulation (CUI) Prevention (NACE SP0198)</h5>
+                        <p class="text-sm text-neutral-700">CUI is a major risk for hot (150-200°C) insulated tanks. Key strategies include:
+                            <ul class="list-disc list-inside ml-4 mt-1 space-y-1">
+                                <li>Protective coatings under insulation (immersion-grade).</li>
+                                <li>Water-resistant insulation (e.g., cellular glass).</li>
+                                <li>Properly sealed weatherproofing/jacketing.</li>
+                                <li>Risk-based inspection programs.</li>
+                            </ul>
+                        </p>
+                    </div>
+                </div>
+                <div id="tankFoundation" class="tab-content">
+                    <h3 class="text-2xl font-semibold text-stone-700 mb-4">Foundation Design</h3>
+                    <p class="mb-4">Foundations (typically concrete ringwall) must support heavy loads and resist thermal effects from hot pitch. API 650 App. B guides geotechnical investigation.</p>
+                    <div class="overflow-x-auto">
+                         <table class="min-w-full divide-y divide-gray-200 table-interactive">
+                            <thead class="bg-stone-100">
+                                <tr>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-stone-600 uppercase tracking-wider">Investigation Aspect</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-stone-600 uppercase tracking-wider">API 650 App. B Recommendation</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-stone-600 uppercase tracking-wider">Details</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200" id="foundationGuidelinesTableBody"></tbody>
+                        </table>
+                    </div>
+                    <p class="mt-4 text-sm text-gray-600">Click row for relevance to large hot pitch tanks.</p>
+                    <div class="mt-6 p-4 bg-orange-50 rounded-lg border border-orange-200">
+                        <h5 class="font-semibold text-orange-700 mb-2">Critical: Thermal Effects on Foundation</h5>
+                        <p class="text-sm text-neutral-700">Sustained heat (150-200°C) can:
+                            <ul class="list-disc list-inside ml-4 mt-1 space-y-1">
+                                <li>Dry out and alter soil properties (settlement, bearing capacity).</li>
+                                <li>Degrade concrete strength if temperatures exceed limits (e.g., >90-93°C).</li>
+                                <li>Induce thermal stresses and cracking in concrete.</li>
+                            </ul>
+                        Mitigation: Tank bottom insulation (e.g., cellular glass), heat-resistant concrete if needed, specialized geotechnical analysis.
+                        </p>
+                    </div>
+                </div>
+                <div id="tankMixing" class="tab-content">
+                    <h3 class="text-2xl font-semibold text-stone-700 mb-4">Tank Mixing Systems</h3>
+                    <p class="mb-4">Effective mixing is vital for homogeneity, sludge prevention, and temperature uniformity in viscous pitch. Side-entry mechanical mixers are generally preferred over jet mixers for high viscosity.</p>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200 table-interactive">
+                            <thead class="bg-stone-100">
+                                <tr>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-stone-600 uppercase tracking-wider">Mixer Type</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-stone-600 uppercase tracking-wider">Suitability for Viscous Pitch</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-stone-600 uppercase tracking-wider">Details</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200" id="mixingSystemsTableBody"></tbody>
+                        </table>
+                    </div>
+                    <p class="mt-4 text-sm text-gray-600">Click row for pros & cons.</p>
+                </div>
+                <div id="tankSafety" class="tab-content">
+                    <h3 class="text-2xl font-semibold text-stone-700 mb-4">Safety & Environmental Systems</h3>
+                    <p class="mb-4">Comprehensive systems are crucial: overfill protection (API 2350), tank venting (API 2000), and fire protection (NFPA 11, NFPA 30).</p>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200 table-interactive">
+                            <thead class="bg-stone-100">
+                                <tr>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-stone-600 uppercase tracking-wider">System</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-stone-600 uppercase tracking-wider">Relevant Standard(s)</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-stone-600 uppercase tracking-wider">Details</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200" id="safetySystemsTableBody"></tbody>
+                        </table>
+                    </div>
+                    <p class="mt-4 text-sm text-gray-600">Click row for key design considerations for hot pitch service.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="recommendations" class="mb-12 pt-16 -mt-16">
+            <h2 class="text-3xl font-bold text-orange-700 mb-6 border-b-2 border-orange-300 pb-2">Key Recommendations & Conclusion</h2>
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                 <p class="mb-6 text-lg">This final section summarizes the primary recommendations stemming from the feasibility study. It emphasizes a phased approach, starting with thorough market and product viability assessments, followed by detailed engineering for the storage facility, and culminating in a comprehensive techno-economic evaluation. The successful valorization of SDA pitch into asphalt hinges on meticulous planning and execution across all these domains.</p>
+                <div class="space-y-4">
+                    <div>
+                        <button class="accordion-button w-full text-left p-3 bg-stone-100 hover:bg-stone-200 rounded-md font-semibold text-stone-700 focus:outline-none">
+                            1. Market and Product Viability Assessment
+                        </button>
+                        <div class="accordion-content hidden p-4 border border-t-0 border-stone-200 rounded-b-md">
+                            <ul class="list-disc list-inside space-y-2 text-neutral-700">
+                                <li>Conduct thorough target market analysis (standards, grading systems).</li>
+                                <li>Initiate laboratory-scale blend development: characterize pitch, evaluate flux oils, test trial blends against standards (ASTM D946, D3381, D6373, EN).</li>
+                                <li>Utilize advanced compatibility testing (ASTM D4740, P-value, SBN/IN).</li>
+                                <li>Consider advanced modification (e.g., mild oxidation) if simple fluxing is insufficient.</li>
+                                <li>Perform detailed economic analysis: modification costs vs. asphalt value vs. coker benefits.</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div>
+                        <button class="accordion-button w-full text-left p-3 bg-stone-100 hover:bg-stone-200 rounded-md font-semibold text-stone-700 focus:outline-none">
+                            2. Large-Scale Pitch Storage Tank - Preliminary Engineering
+                        </button>
+                        <div class="accordion-content hidden p-4 border border-t-0 border-stone-200 rounded-b-md">
+                            <ul class="list-disc list-inside space-y-2 text-neutral-700">
+                                <li>Define design basis: capacity (>600m³), temperature (150-200°C), pitch properties.</li>
+                                <li>Strict adherence to API 650 (App. M), API 2000, API 2350, NFPA 30/11, NACE SP0198.</li>
+                                <li>Material: ASTM A516 Gr. 60/70 with corrosion allowance (3-6mm). Robust CUI prevention (NACE SP0198).</li>
+                                <li>Heating: Favor hot oil system. Detailed heat transfer calculations.</li>
+                                <li>Insulation: Economic thickness (mineral wool, calcium silicate). Address CUI.</li>
+                                <li>Foundation: Concrete ringwall, account for thermal loads on soil/concrete. Under-bottom insulation.</li>
+                                <li>Mixing: Side-entry mechanical mixers for high viscosity.</li>
+                                <li>Safety: Overfill protection, venting, fire protection (foam, cooling).</li>
+                                <li>Engage experienced vendors early.</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div>
+                        <button class="accordion-button w-full text-left p-3 bg-stone-100 hover:bg-stone-200 rounded-md font-semibold text-stone-700 focus:outline-none">
+                            3. Phased Implementation and Risk Management
+                        </button>
+                        <div class="accordion-content hidden p-4 border border-t-0 border-stone-200 rounded-b-md">
+                            <ul class="list-disc list-inside space-y-2 text-neutral-700">
+                                <li>Phase 1: Feasibility and Laboratory Studies.</li>
+                                <li>Phase 2: Pilot Blending and Asphalt Performance Testing (if needed).</li>
+                                <li>Phase 3: Detailed Engineering Design (tank & blending).</li>
+                                <li>Phase 4: Procurement and Construction.</li>
+                                <li>Phase 5: Commissioning and Market Development.</li>
+                                <li>This allows for go/no-go decisions, managing risk and capital.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <h3 class="text-2xl font-semibold text-stone-700 mt-8 mb-4">Conclusion</h3>
+                <p class="mb-4">Valorizing UOP SDA pitch as asphalt is technically feasible but complex. It requires significant modification (blending) to meet market standards. The design of a large (>600 m³) heated (150-200°C) storage tank is a major engineering project demanding adherence to API 650 App. M, careful material selection, robust heating, insulation, CUI prevention, specialized mixing, and comprehensive safety systems.</p>
+                <p class="font-semibold text-teal-700">A holistic techno-economic evaluation and a systematic, phased approach are key to realizing the benefits of this strategic shift.</p>
+            </div>
+        </section>
+
+    </div>
+
+    <div id="infoModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" onclick="closeModal()">&times;</span>
+            <h3 id="modalTitle" class="text-xl font-semibold text-orange-700 mb-3">Details</h3>
+            <p id="modalText" class="text-neutral-700"></p>
+        </div>
+    </div>
+
+    <footer class="bg-stone-700 text-amber-50 text-center p-6 mt-12">
+        <p>&copy; 2025 Refinery SDA Pitch Valorization Interactive Report. For informational purposes only.</p>
+    </footer>
+
+<script>
+    const asphaltStandardsData = [
+        { standard: "ASTM D946", body: "ASTM Int'l", type: "Penetration-Graded", details: "Specifies penetration, flash point, ductility, solubility. Used in North America, widely referenced globally." },
+        { standard: "ASTM D3381/D3381M", body: "ASTM Int'l", type: "Viscosity-Graded", details: "Specifies viscosity at 60°C & 135°C, penetration, flash point. Used in North America and other regions." },
+        { standard: "ASTM D6373", body: "ASTM Int'l", type: "Performance-Graded (PG)", details: "Specifies high/low temp performance grades, DSR, BBR, DTT, PAV, RTFO parameters. North America, increasingly global." },
+        { standard: "AASHTO M 320", body: "AASHTO", type: "Performance-Graded (PG)", details: "Similar to ASTM D6373, focuses on high/low temp performance. Primarily USA." },
+        { standard: "EN 12591", body: "CEN", type: "Paving Grade Bitumens (Pen)", details: "Specifies penetration grades (e.g., 35/50, 50/70), softening point, Fraass breaking point. Europe." },
+        { standard: "EN 13108 Series", body: "CEN", type: "Asphalt Concrete Products", details: "Specifications for Asphalt Concrete, Hot Rolled Asphalt, Stone Mastic Asphalt (mixture properties). Europe." },
+        { standard: "EN 12697 Series", body: "CEN", type: "Asphalt Test Methods", details: "Test methods for hot mix asphalt. Europe." }
+    ];
+
+    const fluxOilsData = [
+        { type: "Vacuum Gas Oil (VGO)", source: "Refinery Vacuum Distillation", details: "Approx. Visc @100°C: ~5-15 cSt. Density: ~900-950 kg/m³. Moderate Aromaticity. Boiling: ~350-550°C. Watson K ~11-12. Adv: Available in refinery. Disadv: Lower solvency for high asphaltene pitch." },
+        { type: "Light Cycle Oil (LCO)", source: "FCC Unit", details: "Approx. Visc @100°C: ~2-4 cSt. Density: ~820-880 kg/m³. Aromatic: 50-80%. Boiling: ~200-380°C. Watson K <10. Adv: Good solvency, readily available. Disadv: May be too light; potential volatility." },
+        { type: "Heavy Cycle Oil (HCO)", source: "FCC Unit", details: "Approx. Visc @100°C: ~5-20 cSt. Density: ~950-1050 kg/m³. High Aromaticity. Boiling: ~350-500+°C. Watson K <10. Adv: Better solvency than LCO. Disadv: Availability may be limited." },
+        { type: "Decanted Oil (CSO)", source: "FCC Unit Bottoms", details: "Approx. Visc @100°C: ~10-50+ cSt. Density: ~1050-1120 kg/m³. Very High Aromaticity (>80%). Boiling: >350°C. BMCI >100. Adv: Excellent solvency. Disadv: High density, potential catalyst fines." },
+        { type: "Aromatic Extract (DAE)", source: "Lube Oil Refining", details: "Approx. Visc @100°C: 10-60+ cSt. Density: ~990-1020 kg/m³. Aromatic CA%: 35-60+. Boiling: >300°C. Watson K <10. Adv: Good compatibility. Disadv: Cost, availability, some health restrictions." },
+        { type: "Vegetable Oil Methyl Esters", source: "Transesterification", details: "Approx. Visc @40°C: ~4-6 cSt. Density: ~880 kg/m³. N/A Aromaticity. Boiling: ~300-370°C. Adv: Renewable, good low-temp properties. Disadv: Different chemistry, long-term stability needs eval." }
+    ];
+
+    const compatibilityTestsData = [
+        { method: "ASTM D4740 Spot Test", principle: "Visual assessment of a spot on filter paper after heating.", details: "Output: Spot rating (1-5); Rating ≥3 indicates incompatibility. Relevance: Quick, qualitative screening for gross incompatibility." },
+        { method: "P-value (ASTM D7112, PORLA)", principle: "Automated titration for asphaltene flocculation point.", details: "Output: P-value, FRmax, Xmin. P-value <1 indicates instability. Relevance: Quantitative assessment of stability; optimizes flux selection." },
+        { method: "Insolubility No. (IN) & Solubility Blending No. (SBN)", principle: "Titration for precipitation tendency and solvent power.", details: "Output: IN and SBN values. Compatible if SBNmix > INmax. Relevance: Quantitative criterion for stable blend formulation." },
+        { method: "Hansen Solubility Parameters (HSP)", principle: "Calculation of dispersion, polar, H-bonding parameters.", details: "Output: δd, δp, δh values. Similar HSPs = better compatibility. Relevance: Theoretical tool to predict miscibility and guide flux selection." }
+    ];
+    
+    const tankDesignCodesData = [
+        { standard: "API 650", aspect: "General tank design", details: "Primary structural design basis for shell, bottom, fixed roof." },
+        { standard: "API 650 App. M", aspect: "Elevated temperatures", details: "Mandatory for 150-200°C; dictates material stress reduction." },
+        { standard: "API 650 App. B", aspect: "Foundation design", details: "Guidance on geotechnical investigation, foundation types, thermal effects." },
+        { standard: "API Std 2000", aspect: "Venting", details: "Design of normal and emergency vents. Critical for hot pitch." },
+        { standard: "API Std 2350", aspect: "Overfill protection", details: "Design of systems to prevent overfills." },
+        { standard: "NFPA 30", aspect: "Flammable/Combustible Liquids", details: "Tank spacing, diking, fire protection, vapor handling." },
+        { standard: "NACE SP0198", aspect: "Corrosion Under Insulation (CUI)", details: "Guidelines for coatings, insulation, inspection to mitigate CUI." }
+    ];
+
+    const tankMaterialsData = [
+        { grade: "A516 Gr. 60", yield: "220 MPa", tensile: "415-550 MPa", details: "Good toughness, widely used. Preferred for reliable performance. Consult API 650 App. M for stresses at temp." },
+        { grade: "A516 Gr. 70", yield: "260 MPa", tensile: "485-620 MPa", details: "Higher strength. Good toughness. Consult API 650 App. M for stresses at temp." },
+        { grade: "A285 Gr. C", yield: "205 MPa", tensile: "380-515 MPa", details: "Lower strength, more ductile. Cost-effective for thinner sections if stress at temp is adequate. Consult API 650 App. M." },
+        { grade: "A36", yield: "250 MPa (typ)", tensile: "400-550 MPa (typ)", details: "Common structural steel. Check suitability for elevated temp per App. M. Impact testing may be required." }
+    ];
+
+    const heatingSystemsData = [
+        { feature: "Efficiency", hot_oil: "High, closed-loop", steam: "Can be efficient, prone to losses", electrical: "High at heater", details: "Hot oil generally offers better overall efficiency for high-temp, continuous duty." },
+        { feature: "Temp. Capability", hot_oil: ">300°C easily", steam: "Limited by pressure (150-200°C achievable)", electrical: "Very high, element limited", details: "Hot oil is well-suited for the 150-200°C pitch range." },
+        { feature: "Pressure Req.", hot_oil: "Low (near atmospheric)", steam: "High for 150-200°C", electrical: "None", details: "Low pressure is a safety advantage for hot oil systems." },
+        { feature: "CAPEX (Relative)", hot_oil: "Potentially higher (fluid, heater)", steam: "Lower if existing infrastructure", electrical: "High for large duties", details: "Site specifics and existing utilities influence CAPEX significantly." },
+        { feature: "OPEX (Relative)", hot_oil: "Generally lower (efficiency, less maintenance)", steam: "Higher (water treatment, traps)", electrical: "High (electricity cost)", details: "Hot oil often has lower long-term OPEX." },
+        { feature: "Safety", hot_oil: "Low pressure safer; fluid leak fire hazard", steam: "High pressure steam burn hazard", electrical: "Electrical hazards", details: "All systems require robust safety protocols." },
+        { feature: "Suitability for Pitch", hot_oil: "Excellent (precise control, high temp/low pressure)", steam: "Suitable, traditional", electrical: "Suitable, precise control", details: "Hot oil is widely favored for modern asphalt/bitumen heating." }
+    ];
+
+    const insulationMaterialsData = [
+        { material: "Mineral Wool", temp: "~650-750+°C", k_value: "0.055-0.070", details: "Pros: Good thermal performance, non-combustible, cost-effective. Cons: Can absorb water if jacketing fails, may sag." },
+        { material: "Calcium Silicate", temp: "~650-980+°C", k_value: "0.050-0.075", details: "Pros: High strength, good thermal stability, non-combustible. Cons: More rigid, potentially higher cost." },
+        { material: "Cellular Glass", temp: "~450-485°C", k_value: "~0.055-0.065", details: "Pros: Impermeable to water, high compressive strength, excellent for CUI prevention (esp. tank bottoms). Cons: Higher cost, brittle." }
+    ];
+    
+    const foundationGuidelinesData = [
+        { aspect: "Purpose", recommendation: "Determine bearing capacity, settlement.", details: "Essential; thermal effects add complexity for hot pitch." },
+        { aspect: "Min. Borings/CPTs", recommendation: "5-13+ based on diameter (API 650 App B).", details: "For >600m³ (D > ~10-12m), min 9-13+ points." },
+        { aspect: "Depth of Borings", recommendation: "To where stress increase <10% overburden.", details: "Significant depth (1-2x tank D), must assess deep thermal effects." },
+        { aspect: "In-Situ Testing", recommendation: "SPT, CPT recommended.", details: "Standard practice; CPT for heterogeneous soils." },
+        { aspect: "Lab Testing", recommendation: "Classification, strength, compressibility.", details: "Crucial for design parameters; consider high-temp soil behavior tests." }
+    ];
+
+    const mixingSystemsData = [
+        { type: "Side-Entry Mechanical Mixer", suitability: "Good (with proper impeller/power)", details: "Pros: Effective for large volumes, viscous fluids, BS&W control. Cons: Moving parts (seals, bearings maintenance), higher initial cost." },
+        { type: "Jet Mixing System (Conventional)", suitability: "Poor to Fair (not for >10 cP without special design)", details: "Pros: No moving parts inside tank. Cons: Low efficiency in viscous liquids, high pumping power, localized shear." }
+    ];
+
+    const safetySystemsData = [
+        { system: "Overfill Protection", standard: "API 2350", details: "Define CH & LOCs. High-temp tolerant level sensors. Alarms & auto-shutdown." },
+        { system: "Normal Venting", standard: "API 2000", details: "Calc. thermal breathing for 150-200°C. Size for fill/empty rates. Heat trace vent lines." },
+        { system: "Emergency Venting", standard: "API 2000, NFPA 30", details: "Calc. relief for fire case (wetted area, insulation factor). Adequately sized PVRVs/manholes." },
+        { system: "Fire Suppression (Foam)", standard: "NFPA 11", details: "Appropriate foam (FP, FFFP). Design for application rate (e.g., ≥4.1 L/min/m²) & duration." },
+        { system: "Tank Cooling", standard: "API RP 2030", details: "Fixed water spray or monitors for shell/roof cooling during fire." },
+        { system: "Secondary Containment", standard: "NFPA 30, Local Regs", details: "Dike/bund sized for spills. Consider dike area foam protection." }
+    ];
+
+
+    function populateTable(tableBodyId, data, detailFields) {
+        const tableBody = document.getElementById(tableBodyId);
+        if (!tableBody) return;
+        tableBody.innerHTML = ''; 
+        data.forEach(item => {
+            const row = tableBody.insertRow();
+            Object.keys(item).forEach(key => {
+                if (!detailFields.includes(key)) {
+                    const cell = row.insertCell();
+                    cell.textContent = item[key];
+                    cell.className = 'px-4 py-2 text-sm text-neutral-700 whitespace-nowrap';
+                }
+            });
+            row.onclick = () => showModal(item.standard || item.type || item.method || item.aspect || item.grade || item.feature || item.material || item.system, item.details);
+        });
+    }
+    
+    function populateHeatingSystemsTable() {
+        const tableBody = document.getElementById('heatingSystemsTableBody');
+        if (!tableBody) return;
+        tableBody.innerHTML = '';
+        heatingSystemsData.forEach(item => {
+            const row = tableBody.insertRow();
+            row.insertCell().textContent = item.feature;
+            row.insertCell().textContent = item.hot_oil;
+            row.insertCell().textContent = item.steam;
+            row.insertCell().textContent = item.electrical;
+            row.className = 'px-4 py-2 text-sm text-neutral-700';
+            row.onclick = () => showModal(item.feature, item.details);
+        });
+    }
+
+
+    const modal = document.getElementById('infoModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalText = document.getElementById('modalText');
+
+    function showModal(title, text) {
+        modalTitle.textContent = title;
+        modalText.innerHTML = text.replace(/\. /g, ".<br>"); // Add line breaks for readability
+        modal.style.display = "block";
+    }
+
+    function closeModal() {
+        modal.style.display = "none";
+    }
+
+    window.onclick = function(event) {
+        if (event.target == modal) {
+            closeModal();
+        }
+    }
+
+    // Chart.js: Pitch vs Asphalt Properties
+    const pitchVsAsphaltCtx = document.getElementById('pitchVsAsphaltChart');
+    if (pitchVsAsphaltCtx) {
+        new Chart(pitchVsAsphaltCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Penetration (dmm)', 'Softening Pt (°C)', 'Ductility (cm)', 'Viscosity @135°C (Pa·s)'],
+                datasets: [
+                    {
+                        label: 'SDA Pitch (Typical Min)',
+                        data: [6, 61, 0.2, 1075],
+                        backgroundColor: 'rgba(234, 88, 12, 0.6)', // orange-600
+                        borderColor: 'rgba(234, 88, 12, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'SDA Pitch (Typical Max)',
+                        data: [29, 71, 0.2, 2125], 
+                        backgroundColor: 'rgba(234, 88, 12, 0.8)',// darker orange
+                        borderColor: 'rgba(234, 88, 12, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: '60/70 Paving Asphalt',
+                        data: [65, 52, 100, 0.45], // Mid-point for Pen/Soft, typical for Duct/Visc
+                        backgroundColor: 'rgba(20, 184, 166, 0.6)', // teal-500
+                        borderColor: 'rgba(20, 184, 166, 1)',
+                        borderWidth: 1
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        type: 'logarithmic', // Use logarithmic for large value differences
+                        title: { display: true, text: 'Value (Log Scale for Viscosity)' }
+                    },
+                    x: {
+                         ticks: {
+                            callback: function(value, index, values) {
+                                const label = this.getLabelForValue(value);
+                                return label.length > 16 ? label.substring(0, 16) + '...' : label;
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed.y !== null) {
+                                    label += context.parsed.y;
+                                }
+                                return label;
+                            }
+                        }
+                    },
+                    legend: {
+                        position: 'top',
+                    }
+                }
+            }
+        });
+    }
+    
+    // Accordion functionality
+    document.querySelectorAll('.accordion-button').forEach(button => {
+        button.addEventListener('click', () => {
+            const content = button.nextElementSibling;
+            button.classList.toggle('active');
+            content.classList.toggle('hidden');
+        });
+    });
+
+    // Tab functionality
+    const tabContainers = document.querySelectorAll('#pitchToAsphalt > div.bg-white, #pitchStorage > div.bg-white');
+    tabContainers.forEach(container => {
+        const tabButtons = container.querySelectorAll('.tab-button');
+        const tabContents = container.querySelectorAll('.tab-content');
+
+        tabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                tabButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                
+                const targetTab = button.getAttribute('data-tab');
+                tabContents.forEach(content => {
+                    if (content.id === targetTab) {
+                        content.classList.add('active');
+                    } else {
+                        content.classList.remove('active');
+                    }
+                });
+            });
+        });
+    });
+    
+    // Smooth scroll for navigation links
+    document.querySelectorAll('nav a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            const targetId = this.getAttribute('href');
+            const targetElement = document.querySelector(targetId);
+            if (targetElement) {
+                targetElement.scrollIntoView({
+                    behavior: 'smooth'
+                });
+            }
+            // Close mobile menu if open
+            const navLinks = document.getElementById('navLinks');
+            if (!navLinks.classList.contains('hidden')) {
+                navLinks.classList.add('hidden');
+            }
+        });
+    });
+
+    // Mobile menu toggle
+    const mobileMenuButton = document.getElementById('mobileMenuButton');
+    const navLinks = document.getElementById('navLinks');
+    if (mobileMenuButton && navLinks) {
+        mobileMenuButton.addEventListener('click', () => {
+            navLinks.classList.toggle('hidden');
+        });
+    }
+
+
+    // Populate tables on load
+    window.onload = () => {
+        populateTable('asphaltStandardsTableBody', asphaltStandardsData, ['details']);
+        populateTable('fluxOilsTableBody', fluxOilsData, ['details']);
+        populateTable('compatibilityTestsTableBody', compatibilityTestsData, ['details']);
+        populateTable('tankDesignCodesTableBody', tankDesignCodesData, ['details']);
+        populateTable('tankMaterialsTableBody', tankMaterialsData, ['details']);
+        populateHeatingSystemsTable(); // Special population for this table
+        populateTable('insulationMaterialsTableBody', insulationMaterialsData, ['details']);
+        populateTable('foundationGuidelinesTableBody', foundationGuidelinesData, ['details']);
+        populateTable('mixingSystemsTableBody', mixingSystemsData, ['details']);
+        populateTable('safetySystemsTableBody', safetySystemsData, ['details']);
+    };
+
+</script>
+</body>
+</html>
